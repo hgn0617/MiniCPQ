@@ -1,129 +1,118 @@
-# Mini CPQ 服务器报价系统
+# MiniCPQ 服务器报价系统
 
-根据 `AspNetCore练习.pdf` 实现的 ASP.NET Core 练习项目。管理员维护硬件材料和服务器配置，销售创建并提交报价，系统在提交时计算金额并冻结材料价格快照。项目同时提供 Razor 业务页面和 Swagger API 调试界面。
+MiniCPQ 是一个基于 ASP.NET Core MVC 开发的服务器报价练习项目。管理员可以维护材料价格、配置服务器型号并审批报价；销售可以选择服务器、填写数量并提交报价。系统会根据材料成本自动计算报价，并在提交后保存价格快照，避免后续材料调价影响历史报价。
+
+## 主要功能
+
+- Admin/Sales 角色登录与权限控制
+- 材料价格和服务器配置管理
+- 销售创建、修改和提交报价
+- 报价提交时计算并冻结成本快照
+- 管理员按毛利率计算售价，或直接修改售价
+- Razor 管理页面与 Swagger API 文档
 
 ## 技术栈
 
-- .NET 10 / ASP.NET Core MVC Controller + Razor Views
-- ASP.NET Core Identity（Cookie 登录、Admin/Sales 角色）
-- Entity Framework Core 10 + Migration
-- PostgreSQL 17（Npgsql）
+- .NET 10、ASP.NET Core MVC、Razor Views
+- Entity Framework Core 10、ASP.NET Core Identity
+- PostgreSQL 17、Npgsql
 - Swagger / OpenAPI
-- xUnit + SQLite 内存数据库（自动化业务测试）
+- xUnit
 
-## 解决方案结构
+## 项目结构
 
 ```text
 MiniCPQ.Domain          领域实体和报价状态
-MiniCPQ.Application     DTO、服务接口、业务异常
-MiniCPQ.Infrastructure  EF Core、Identity、Service 实现、Migration
-MiniCPQ.Web             MVC 页面、API Controller、Swagger、全局异常处理
-MiniCPQ.Tests           核心业务流程测试
+MiniCPQ.Application     DTO、业务接口和业务异常
+MiniCPQ.Infrastructure  EF Core、Identity、服务实现和数据库迁移
+MiniCPQ.Web             MVC 页面、API Controller 和 Swagger
+MiniCPQ.Tests           自动化业务测试
 ```
 
-## 本机启动
+## 如何运行
 
-当前项目按实习环境备忘录使用 PostgreSQL 17。练习环境预置了简单的用户名和密码，便于直接演示角色权限。
+### 1. 准备环境
+
+请先安装：
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [PostgreSQL](https://www.postgresql.org/download/)（推荐 17）
+- Git
+
+### 2. 下载代码
 
 ```bash
+git clone https://github.com/hgn0617/MiniCPQ.git
 cd MiniCPQ
+```
 
-brew services run postgresql@17
-createdb minicpq  # 数据库已存在时跳过
+### 3. 创建数据库
 
+先启动 PostgreSQL，然后创建名为 `minicpq` 的空数据库：
+
+```bash
+createdb minicpq
+```
+
+如果没有 `createdb` 命令，也可以在 PostgreSQL 或 DBeaver 中执行：
+
+```sql
+CREATE DATABASE minicpq;
+```
+
+### 4. 配置数据库连接
+
+推荐通过环境变量传入自己电脑的 PostgreSQL 用户名和密码。
+
+macOS / Linux：
+
+```bash
+export ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=minicpq;Username=你的用户名;Password=你的密码'
+```
+
+Windows PowerShell：
+
+```powershell
+$env:ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=minicpq;Username=你的用户名;Password=你的密码'
+```
+
+本机 PostgreSQL 使用免密码认证时，可以省略连接字符串中的 `Password`。
+
+### 5. 启动项目
+
+```bash
 dotnet tool restore
+dotnet restore
 dotnet run --project MiniCPQ.Web
 ```
 
-其他电脑上的 PostgreSQL 用户名不同时，可在启动前覆盖连接字符串：
+程序会自动应用 EF Core Migration、创建数据表和初始化演示账号。启动成功后访问：
 
-```bash
-export ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=minicpq;Username=你的数据库用户名;Password=你的数据库密码'
-```
+- 项目首页：<http://localhost:5113>
+- 登录页面：<http://localhost:5113/account/login>
+- Swagger：<http://localhost:5113/swagger>
 
-本机采用免密码认证时可以省略 `Password`。仓库不会包含真实数据库密码或现有数据库数据。
+## 演示账号
 
-程序启动时会自动应用 Migration、创建 `Admin`/`Sales` 角色，并创建或同步以下练习账号：
-
-- 管理员：用户名 `admin`，密码 `123456`
-- 销售：用户名 `sales`，密码 `123456`
-
-角色仍由 ASP.NET Core Identity 的角色关系确定，程序不会根据用户名字符串硬编码权限。`123456` 仅适合本机练习，正式环境应从环境变量或密钥系统覆盖密码并恢复强密码策略。
-
-打开终端输出中的地址，然后访问：
-
-- `/`：项目入口页
-- `/account/login`：业务系统登录
-- `/quotes`：报价管理
-- `/admin/materials`：管理员材料管理
-- `/admin/servers`：管理员服务器配置
-- `/swagger`：Swagger API 文档
-
-在 Swagger 中先调用 `POST /api/auth/login`。登录成功后浏览器会自动携带 HttpOnly Cookie。
-
-## 常用命令
-
-```bash
-dotnet build MiniCPQ.slnx
-dotnet test MiniCPQ.slnx
-
-dotnet tool run dotnet-ef migrations add <MigrationName> \
-  --project MiniCPQ.Infrastructure/MiniCPQ.Infrastructure.csproj \
-  --output-dir Data/Migrations
-
-dotnet tool run dotnet-ef database update \
-  --project MiniCPQ.Infrastructure/MiniCPQ.Infrastructure.csproj
-```
-
-## 主要 API
-
-| 模块 | 方法与路由 | 角色 |
+| 角色 | 用户名 | 密码 |
 |---|---|---|
-| 登录 | `POST /api/auth/login` | 匿名 |
-| 当前用户 | `GET /api/auth/me` | 已登录 |
-| 材料 CRUD | `/api/materials` | Admin |
-| 查询服务器 | `GET /api/servers` | Admin、Sales |
-| 服务器增删改 | `/api/servers` | Admin |
-| 查询报价 | `GET /api/quotes` | Admin、Sales |
-| 创建报价 | `POST /api/quotes` | Sales |
-| 报价条目 | `/api/quotes/{id}/items` | Sales |
-| 提交报价 | `POST /api/quotes/{id}/submit` | Sales |
-| 审批报价 | `POST /api/quotes/{id}/approve` | Admin |
+| 管理员 | `admin` | `123456` |
+| 销售 | `sales` | `123456` |
 
-## 业务页面
+这些账号只用于本地学习和演示，不应直接用于生产环境。
 
-- 未登录首页与登录页
-- 根据 Admin/Sales 角色变化的工作台和导航
-- 管理员材料新增、编辑、删除和并发冲突提示
-- 管理员服务器材料组合、数量配置和实时成本展示
-- 销售报价创建、服务器增删、数量修改和提交
-- 提交后的服务器成本、材料展开数量与价格快照展示
-- 管理员报价列表、详情、双向联动定价和审批操作
+## 推荐体验流程
 
-页面使用 MVC Controller 调用现有 Service，业务规则没有复制到 View 或页面 Controller 中。Swagger 保留用于查看和调试同一套后端 API。
+1. 使用 `admin` 登录，在“材料管理”中添加材料及成本。
+2. 在“服务器配置”中创建服务器型号并选择所需材料和数量。
+3. 退出管理员账号，使用 `sales` 登录并创建报价。
+4. 向报价中添加服务器、修改数量，然后提交报价。
+5. 再次使用 `admin` 登录，设置毛利率或售价并审批报价。
 
-## 已实现的业务规则
+## 运行测试
 
-- 服务器不保存价格；查询时根据当前材料单价动态计算。
-- 材料价格使用 `Version` 并发令牌，过期版本更新返回 HTTP 409。
-- Draft 报价允许增删服务器、修改数量。
-- 提交报价在数据库事务中展开服务器材料、计算并冻结成本、保存快照并改为 Submitted。
-- Submitted/Approved 报价不能再修改内容。
-- 材料后续改价不会改变历史报价金额和快照单价。
-- Submitted 报价等待管理员定价；输入毛利率会反算售价，修改售价也会实时反算毛利率。
-- 最终售价不得低于成本，管理员确认售价并审批后，`Price` 与利润数据随报价冻结。
-- PDF 给出了 Approved 状态但未定义审批接口，因此补充为 Admin 定价并审批 Submitted 报价。
+```bash
+dotnet test MiniCPQ.slnx
+```
 
-## 验证范围
-
-自动化测试覆盖：
-
-- 服务器价格随材料价格动态变化。
-- 报价提交后生成材料快照并冻结历史金额。
-- 管理员定价不能低于成本，审批后售价和毛利率可正确计算。
-- 已提交报价禁止继续修改。
-- 材料过期版本更新发生并发冲突。
-
-此外已使用本地 PostgreSQL 和浏览器完成 Admin/Sales 真实页面流程验收，包括登录、角色菜单、创建报价、提交快照和管理员审批。
-
-Git 仓库和提交历史尚未初始化，按要求留到后续处理。
+仓库不包含本机数据库数据或真实数据库密码。每位使用者都需要创建自己的 PostgreSQL 数据库。
