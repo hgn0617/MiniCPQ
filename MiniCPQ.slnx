@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="MiniCPQ.Application/MiniCPQ.Application.csproj" />
+  <Project Path="MiniCPQ.Domain/MiniCPQ.Domain.csproj" />
+  <Project Path="MiniCPQ.Infrastructure/MiniCPQ.Infrastructure.csproj" />
+  <Project Path="MiniCPQ.Tests/MiniCPQ.Tests.csproj" />
+  <Project Path="MiniCPQ.Web/MiniCPQ.Web.csproj" />
+</Solution>

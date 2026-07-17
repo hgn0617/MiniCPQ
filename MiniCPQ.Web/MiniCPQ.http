@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:5113
+
+### 登录
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "sales",
+  "password": "123456",
+  "rememberMe": false
+}
+
+### 当前用户
+GET {{baseUrl}}/api/auth/me
+
+### 查询服务器
+GET {{baseUrl}}/api/servers
+
+### 创建报价
+POST {{baseUrl}}/api/quotes
+Content-Type: application/json
+
+{
+  "customerName": "ABC 公司"
+}

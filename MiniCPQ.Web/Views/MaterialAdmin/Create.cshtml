@@ -1,0 +1,17 @@
+@model MaterialFormViewModel
+@{
+    ViewData["Title"] = "新增材料";
+}
+
+<div class="form-page">
+    <div class="page-heading"><div><span class="eyebrow">MATERIAL</span><h1>新增材料</h1><p>材料单价将用于服务器实时成本计算。</p></div></div>
+    <form asp-action="Create" method="post" class="content-card form-card">
+        <partial name="_FormFields" model="Model" />
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">保存材料</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">取消</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,182 @@
+@model QuoteDetailsViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = $"报价 - {Model.Quote.CustomerName}";
+    var quote = Model.Quote;
+    var isDraftSales = quote.Status == QuoteStatus.Draft && User.IsInRole(AppRoles.Sales);
+    var statusClass = quote.Status switch
+    {
+        QuoteStatus.Draft => "status-draft",
+        QuoteStatus.Submitted => "status-submitted",
+        QuoteStatus.Approved => "status-approved",
+        _ => string.Empty
+    };
+}
+
+<div class="quote-header content-card">
+    <div>
+        <a class="back-link" asp-action="Index">← 返回报价列表</a>
+        <span class="status-badge @statusClass">@quote.Status</span>
+        <h1>@quote.CustomerName</h1>
+        <p>创建于 @quote.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p>
+    </div>
+    <div class="quote-totals">
+        <div><small>成本</small><strong>@(quote.Status == QuoteStatus.Draft ? "待提交计算" : $"¥ {quote.Cost:N2}")</strong></div>
+        <div><small>最终售价</small><strong>@(quote.Price.HasValue ? $"¥ {quote.Price.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待管理员定价" : "—")</strong></div>
+        @if (quote.GrossMarginPercent.HasValue)
+        {
+            <div><small>毛利率</small><strong>@quote.GrossMarginPercent.Value.ToString("N2")%</strong></div>
+        }
+    </div>
+</div>
+
+@if (isDraftSales)
+{
+    <section class="content-card add-server-panel">
+        <div><span class="eyebrow">CONFIGURE</span><h2>添加服务器</h2></div>
+        @if (Model.AvailableServers.Count == 0)
+        {
+            <div class="alert alert-warning mb-0">管理员还没有配置服务器，请先联系管理员。</div>
+        }
+        else
+        {
+            <form asp-action="AddItem" asp-route-id="@quote.Id" method="post" class="add-server-form">
+                <div class="flex-grow-1">
+                    <label class="form-label">服务器型号</label>
+                    <select name="serverId" class="form-select" required>
+                        @foreach (var server in Model.AvailableServers)
+                        {
+                            <option value="@server.Id">@server.Name · ¥ @server.CurrentCost.ToString("N2") / 台</option>
+                        }
+                    </select>
+                </div>
+                <div class="quantity-field"><label class="form-label">数量</label><input name="quantity" type="number" class="form-control" min="1" value="1" required /></div>
+                <button class="btn btn-primary" type="submit">添加</button>
+            </form>
+        }
+    </section>
+}
+
+<section class="content-card mt-4">
+    <div class="section-heading"><div><span class="eyebrow">ITEMS</span><h2>服务器清单</h2></div><span>@quote.Items.Count 个型号 / @quote.Items.Sum(x => x.Quantity) 台</span></div>
+    @if (quote.Items.Count == 0)
+    {
+        <div class="empty-inline">报价单还没有服务器。</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>服务器</th><th>数量</th><th class="text-end">单台成本</th><th class="text-end">小计</th>@if (isDraftSales) { <th class="text-end">操作</th> }</tr></thead>
+                <tbody>
+                @foreach (var item in quote.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.ServerName</td>
+                        <td>
+                            @if (isDraftSales)
+                            {
+                                <form asp-action="UpdateItem" asp-route-id="@quote.Id" asp-route-itemId="@item.Id" method="post" class="quantity-update">
+                                    <input name="quantity" type="number" class="form-control form-control-sm" min="1" value="@item.Quantity" />
+                                    <button class="btn btn-sm btn-outline-secondary" type="submit" title="保存该服务器的数量">保存数量</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span>× @item.Quantity</span>
+                            }
+                        </td>
+                        <td class="text-end">@(item.UnitCost.HasValue ? $"¥ {item.UnitCost:N2}" : "提交时计算")</td>
+                        <td class="text-end price-text">@(item.TotalCost.HasValue ? $"¥ {item.TotalCost:N2}" : "—")</td>
+                        @if (isDraftSales)
+                        {
+                            <td class="text-end">
+                                <form asp-action="DeleteItem" asp-route-id="@quote.Id" asp-route-itemId="@item.Id" method="post" onsubmit="return confirm('确定移除该服务器吗？');">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">移除</button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                    @if (item.Materials.Count > 0)
+                    {
+                        <tr class="snapshot-row">
+                            <td colspan="@(isDraftSales ? 5 : 4)">
+                                <div class="snapshot-title">提交快照</div>
+                                <div class="snapshot-grid">
+                                @foreach (var material in item.Materials)
+                                {
+                                    <div><span>@material.MaterialName <small>@material.MaterialType</small></span><b>@material.Quantity × ¥ @material.UnitPrice.ToString("N2")</b><strong>¥ @material.TotalPrice.ToString("N2")</strong></div>
+                                }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@if (isDraftSales)
+{
+    <div class="quote-actions">
+        <div><strong>提交后不可继续修改</strong><span>系统将按当前材料价格计算并保存快照。</span></div>
+        <form asp-action="Submit" asp-route-id="@quote.Id" method="post" onsubmit="return confirm('提交后报价内容不可修改，确定提交吗？');">
+            <button class="btn btn-primary btn-lg" type="submit" @(quote.Items.Count == 0 ? "disabled" : null)>提交报价</button>
+        </form>
+    </div>
+}
+else if (quote.Status == QuoteStatus.Submitted && User.IsInRole(AppRoles.Admin))
+{
+    <section class="content-card pricing-panel mt-4">
+        <div class="pricing-heading">
+            <div><span class="eyebrow">PRICING</span><h2>确定最终售价</h2><p>修改任意一项，另一项会立即重新计算。</p></div>
+            <div class="pricing-cost"><small>已冻结成本</small><strong>¥ @quote.Cost.ToString("N2")</strong></div>
+        </div>
+        <form asp-action="Approve" asp-route-id="@quote.Id" method="post" id="approval-pricing-form"
+              data-cost="@quote.Cost.ToString(CultureInfo.InvariantCulture)">
+            <div class="pricing-inputs">
+                <div>
+                    <label for="gross-margin-percent" class="form-label">毛利率</label>
+                    <div class="input-group">
+                        <input id="gross-margin-percent" type="number" class="form-control" min="0" max="99.99" step="0.01" value="20.00" inputmode="decimal" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="pricing-link" aria-hidden="true">⇄</div>
+                <div>
+                    <label for="final-price" class="form-label">最终售价</label>
+                    <div class="input-group">
+                        <span class="input-group-text">¥</span>
+                        <input id="final-price" name="price" type="number" class="form-control" min="@quote.Cost.ToString(CultureInfo.InvariantCulture)" step="0.01" inputmode="decimal" required />
+                    </div>
+                </div>
+            </div>
+            <div class="pricing-summary">
+                <span>预计利润 <strong id="pricing-profit">—</strong></span>
+                <span id="pricing-message">售价不能低于成本</span>
+            </div>
+            <div class="pricing-submit">
+                <span>批准后售价与成本快照都会冻结，不能再次修改。</span>
+                <button id="approve-quote-button" class="btn btn-success btn-lg" type="submit">确认售价并批准</button>
+            </div>
+        </form>
+    </section>
+}
+else if (quote.Status == QuoteStatus.Submitted)
+{
+    <div class="quote-actions">
+        <div><strong>报价已提交</strong><span>成本快照已冻结，正在等待管理员确定最终售价并审批。</span></div>
+    </div>
+}
+else
+{
+    <div class="quote-actions">
+        <div><strong>报价内容已冻结</strong><span>材料价格后续变化不会影响这张报价。</span></div>
+        @if (quote.Profit.HasValue)
+        {
+            <div class="text-end"><strong>利润 ¥ @quote.Profit.Value.ToString("N2")</strong><span>毛利率 @quote.GrossMarginPercent!.Value.ToString("N2")%</span></div>
+        }
+    </div>
+}

@@ -1,0 +1,19 @@
+@model MaterialFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" placeholder="例如：Intel Xeon" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Type" class="form-label"></label>
+    <input asp-for="Type" class="form-control" list="materialTypes" placeholder="CPU / RAM / ROM / GPU" />
+    <datalist id="materialTypes"><option value="CPU"></option><option value="RAM"></option><option value="ROM"></option><option value="GPU"></option><option value="NIC"></option></datalist>
+    <span asp-validation-for="Type" class="text-danger"></span>
+</div>
+<div class="mb-4">
+    <label asp-for="UnitPrice" class="form-label"></label>
+    <div class="input-group"><span class="input-group-text">¥</span><input asp-for="UnitPrice" class="form-control" /></div>
+    <span asp-validation-for="UnitPrice" class="text-danger"></span>
+</div>

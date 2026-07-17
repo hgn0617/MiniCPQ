@@ -1,0 +1,29 @@
+@model ServerFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="mb-4">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control form-control-lg" placeholder="例如：Dell R750" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <div><label class="form-label mb-0">硬件组成</label><div class="form-text">勾选材料并设置单台服务器所需数量。</div></div>
+    <span asp-validation-for="Materials" class="text-danger"></span>
+</div>
+<div class="material-option-grid">
+@for (var i = 0; i < Model.Materials.Count; i++)
+{
+    <div class="material-option">
+        <input asp-for="Materials[i].MaterialId" type="hidden" />
+        <div class="form-check">
+            <input asp-for="Materials[i].Selected" class="form-check-input material-toggle" />
+            <label asp-for="Materials[i].Selected" class="form-check-label fw-semibold">@Model.Materials[i].Name</label>
+        </div>
+        <div class="material-meta"><span>@Model.Materials[i].Type</span><span>¥ @Model.Materials[i].UnitPrice.ToString("N2")</span></div>
+        <div class="input-group input-group-sm mt-3">
+            <span class="input-group-text">数量</span>
+            <input asp-for="Materials[i].Quantity" class="form-control material-quantity" min="0" />
+        </div>
+    </div>
+}
+</div>

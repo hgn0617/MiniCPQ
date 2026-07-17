@@ -1,0 +1,19 @@
+@model QuoteCreateViewModel
+@{
+    ViewData["Title"] = "新建报价";
+}
+
+<div class="form-page">
+    <div class="page-heading"><div><span class="eyebrow">NEW QUOTE</span><h1>新建报价单</h1><p>先填写客户名称，下一步再添加服务器和数量。</p></div></div>
+    <form asp-action="Create" method="post" class="content-card form-card">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <div class="mb-4">
+            <label asp-for="CustomerName" class="form-label"></label>
+            <input asp-for="CustomerName" class="form-control form-control-lg" placeholder="例如：ABC 公司" autofocus />
+            <span asp-validation-for="CustomerName" class="text-danger"></span>
+        </div>
+        <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">创建并继续</button><a class="btn btn-outline-secondary" asp-action="Index">取消</a></div>
+    </form>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

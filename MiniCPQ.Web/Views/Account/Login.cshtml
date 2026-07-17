@@ -1,0 +1,43 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "登录";
+}
+
+<div class="auth-shell">
+    <section class="auth-info">
+        <span class="eyebrow">MINI CPQ</span>
+        <h1>服务器报价，<br />从配置到审批。</h1>
+        <p>登录后系统会根据 Admin 或 Sales 角色展示对应工作区。</p>
+    </section>
+    <section class="auth-card">
+        <h2>登录系统</h2>
+        <p class="text-secondary">使用已配置的工作账号继续</p>
+        <div class="login-hint">
+            <span>管理员：<b>admin</b> / <b>123456</b></span>
+            <span>销售：<b>sales</b> / <b>123456</b></span>
+        </div>
+        <form asp-action="Login" method="post" class="mt-4">
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control form-control-lg" autocomplete="username" placeholder="admin 或 sales" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control form-control-lg" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-check mb-4">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label"></label>
+            </div>
+            <button class="btn btn-primary btn-lg w-100" type="submit">登录</button>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

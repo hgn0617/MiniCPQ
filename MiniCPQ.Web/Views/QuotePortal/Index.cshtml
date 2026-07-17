@@ -1,0 +1,49 @@
+@model IReadOnlyCollection<QuoteDto>
+@{
+    ViewData["Title"] = "报价单";
+    string BadgeClass(QuoteStatus status) => status switch
+    {
+        QuoteStatus.Draft => "status-draft",
+        QuoteStatus.Submitted => "status-submitted",
+        QuoteStatus.Approved => "status-approved",
+        _ => string.Empty
+    };
+}
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">@(User.IsInRole(AppRoles.Admin) ? "ADMIN · QUOTES" : "SALES · QUOTES")</span>
+        <h1>报价单</h1>
+        <p>@(User.IsInRole(AppRoles.Admin) ? "查看销售报价并完成审批。" : "创建客户报价并在确认配置后提交。")</p>
+    </div>
+    @if (User.IsInRole(AppRoles.Sales))
+    {
+        <a class="btn btn-primary" asp-action="Create">新建报价</a>
+    }
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state content-card"><div class="empty-code">0</div><h2>暂时没有报价单</h2><p>创建第一张客户报价后会显示在这里。</p></div>
+}
+else
+{
+    <div class="content-card table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>客户</th><th>创建时间</th><th>状态</th><th>服务器</th><th class="text-end">报价金额</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var quote in Model)
+            {
+                <tr>
+                    <td class="fw-semibold">@quote.CustomerName</td>
+                    <td>@quote.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    <td><span class="status-badge @BadgeClass(quote.Status)">@quote.Status</span></td>
+                    <td>@quote.Items.Sum(x => x.Quantity) 台</td>
+                    <td class="text-end price-text">@(quote.Price.HasValue ? $"¥ {quote.Price.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待定价" : "—")</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@quote.Id">查看</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

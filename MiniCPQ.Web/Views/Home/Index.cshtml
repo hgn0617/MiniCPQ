@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "工作台";
+}
+
+@if (User.Identity?.IsAuthenticated != true)
+{
+    <section class="hero-panel">
+        <div class="hero-copy">
+            <span class="eyebrow">SERVER QUOTATION WORKSPACE</span>
+            <h1>让服务器配置与报价<br />准确、清晰、可追溯</h1>
+            <p>管理员维护硬件和服务器配置，销售创建报价；提交时自动计算价格并冻结历史快照。</p>
+            <div class="d-flex gap-3 flex-wrap">
+                <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Login">进入系统</a>
+                <a class="btn btn-outline-secondary btn-lg" href="/swagger">查看 Swagger</a>
+            </div>
+        </div>
+        <div class="hero-metric">
+            <div class="metric-label">报价流程</div>
+            <div class="status-flow">
+                <span>Draft</span><b>→</b><span>Submitted</span><b>→</b><span>Approved</span>
+            </div>
+            <div class="metric-note">提交即冻结材料名称、数量与单价</div>
+        </div>
+    </section>
+}
+else
+{
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow">WORKSPACE</span>
+            <h1>欢迎回来</h1>
+            <p>当前身份：@(User.IsInRole(AppRoles.Admin) ? "管理员" : "销售")</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <a class="dashboard-card" asp-controller="QuotePortal" asp-action="Index">
+            <span class="card-index">01</span>
+            <h2>报价单</h2>
+            <p>@(User.IsInRole(AppRoles.Admin) ? "查看并审批销售提交的报价" : "创建、编辑并提交客户报价")</p>
+            <span class="card-link">进入模块 →</span>
+        </a>
+        @if (User.IsInRole(AppRoles.Admin))
+        {
+            <a class="dashboard-card" asp-controller="MaterialAdmin" asp-action="Index">
+                <span class="card-index">02</span>
+                <h2>硬件材料</h2>
+                <p>维护 CPU、RAM、ROM 及其他材料的当前价格</p>
+                <span class="card-link">管理材料 →</span>
+            </a>
+            <a class="dashboard-card" asp-controller="ServerAdmin" asp-action="Index">
+                <span class="card-index">03</span>
+                <h2>服务器配置</h2>
+                <p>组合材料及数量，价格根据材料实时计算</p>
+                <span class="card-link">管理配置 →</span>
+            </a>
+        }
+        <a class="dashboard-card dashboard-card-dark" href="/swagger">
+            <span class="card-index">API</span>
+            <h2>Swagger</h2>
+            <p>查看并调试系统的全部后端接口</p>
+            <span class="card-link">打开文档 →</span>
+        </a>
+    </div>
+}
