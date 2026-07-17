@@ -68,6 +68,7 @@ public static class DependencyInjection
 
         services.AddScoped<IMaterialService, MaterialService>();
         services.AddScoped<IServerService, ServerService>();
+        services.AddScoped<IExchangeRateService, ExchangeRateService>();
         services.AddScoped<IQuoteService, QuoteService>();
         return services;
     }

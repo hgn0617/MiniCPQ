@@ -11,6 +11,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<Server> Servers => Set<Server>();
     public DbSet<ServerMaterial> ServerMaterials => Set<ServerMaterial>();
+    public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Quote> Quotes => Set<Quote>();
     public DbSet<QuoteItem> QuoteItems => Set<QuoteItem>();
     public DbSet<QuoteMaterialSnapshot> QuoteMaterialSnapshots => Set<QuoteMaterialSnapshot>();
@@ -49,21 +50,39 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.ToTable(t => t.HasCheckConstraint("CK_ServerMaterials_Quantity", "\"Quantity\" > 0"));
         });
 
+        builder.Entity<ExchangeRate>(entity =>
+        {
+            entity.Property(x => x.CurrencyCode).HasMaxLength(3).IsRequired();
+            entity.Property(x => x.CurrencyName).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.CnyPerUnit).HasPrecision(18, 6);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => x.CurrencyCode).IsUnique();
+            entity.ToTable(t => t.HasCheckConstraint("CK_ExchangeRates_CnyPerUnit", "\"CnyPerUnit\" > 0"));
+        });
+
         builder.Entity<Quote>(entity =>
         {
             entity.Property(x => x.CustomerName).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
             entity.Property(x => x.Cost).HasPrecision(18, 2);
             entity.Property(x => x.Price).HasPrecision(18, 2);
+            entity.Property(x => x.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("CNY");
+            entity.Property(x => x.CurrencyName).HasMaxLength(50).IsRequired().HasDefaultValue("人民币");
+            entity.Property(x => x.CnyPerUnit).HasPrecision(18, 6).HasDefaultValue(1m);
             entity.Property(x => x.CreatedByUserId).HasMaxLength(450).IsRequired();
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(x => x.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.ExchangeRate)
+                .WithMany(x => x.Quotes)
+                .HasForeignKey(x => x.ExchangeRateId)
+                .OnDelete(DeleteBehavior.SetNull);
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_Quotes_Cost", "\"Cost\" >= 0");
                 t.HasCheckConstraint("CK_Quotes_Price", "\"Price\" >= 0");
+                t.HasCheckConstraint("CK_Quotes_CnyPerUnit", "\"CnyPerUnit\" > 0");
             });
         });
 
@@ -122,6 +141,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     private void RefreshMaterialVersions()
     {
         foreach (var entry in ChangeTracker.Entries<Material>().Where(x => x.State == EntityState.Modified))
+        {
+            entry.Entity.Version = Guid.NewGuid();
+        }
+
+        foreach (var entry in ChangeTracker.Entries<ExchangeRate>().Where(x => x.State == EntityState.Modified))
         {
             entry.Entity.Version = Guid.NewGuid();
         }

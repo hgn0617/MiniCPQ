@@ -63,6 +63,9 @@ public sealed class ServerMaterialOptionViewModel
 
     [Range(0, int.MaxValue, ErrorMessage = "数量不能小于零。")]
     public int Quantity { get; set; }
+
+    public int? MaxQuantity { get; set; }
+    public string? LimitDescription { get; set; }
 }
 
 public sealed class QuoteCreateViewModel
@@ -71,10 +74,36 @@ public sealed class QuoteCreateViewModel
     [StringLength(200)]
     [Display(Name = "客户名称")]
     public string CustomerName { get; set; } = string.Empty;
+
+    [Display(Name = "报价币种")]
+    public Guid? ExchangeRateId { get; set; }
+
+    public IReadOnlyCollection<ExchangeRateDto> ExchangeRates { get; set; } = [];
 }
 
 public sealed class QuoteDetailsViewModel
 {
     public required QuoteDto Quote { get; init; }
     public IReadOnlyCollection<ServerDto> AvailableServers { get; init; } = [];
+}
+
+public sealed class ExchangeRateFormViewModel
+{
+    public Guid Id { get; set; }
+
+    [Required(ErrorMessage = "请输入币种代码。")]
+    [StringLength(3, MinimumLength = 3, ErrorMessage = "币种代码必须是三个英文字母。")]
+    [Display(Name = "币种代码")]
+    public string CurrencyCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "请输入币种名称。")]
+    [StringLength(50)]
+    [Display(Name = "币种名称")]
+    public string CurrencyName { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0.000001", "999999999999", ErrorMessage = "汇率必须大于零。")]
+    [Display(Name = "1 单位外币兑换人民币")]
+    public decimal CnyPerUnit { get; set; }
+
+    public Guid Version { get; set; }
 }

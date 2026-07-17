@@ -48,7 +48,31 @@ public sealed class QuoteService(ApplicationDbContext db) : IQuoteService
             throw new ValidationException("客户名称不能为空。");
         }
 
-        var quote = new Quote { CustomerName = customerName, CreatedByUserId = userId };
+        var quote = new Quote
+        {
+            CustomerName = customerName,
+            CreatedByUserId = userId,
+            CurrencyCode = "CNY",
+            CurrencyName = "人民币",
+            CnyPerUnit = 1m
+        };
+
+        if (request.ExchangeRateId.HasValue)
+        {
+            if (request.ExchangeRateId.Value == Guid.Empty)
+            {
+                throw new ValidationException("请选择有效的报价币种。");
+            }
+
+            var rate = await db.ExchangeRates.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == request.ExchangeRateId.Value, cancellationToken)
+                ?? throw new NotFoundException("选择的汇率不存在。");
+            quote.ExchangeRateId = rate.Id;
+            quote.CurrencyCode = rate.CurrencyCode;
+            quote.CurrencyName = rate.CurrencyName;
+            quote.CnyPerUnit = rate.CnyPerUnit;
+        }
+
         db.Quotes.Add(quote);
         await db.SaveChangesAsync(cancellationToken);
         return Map(quote);
@@ -283,6 +307,9 @@ public sealed class QuoteService(ApplicationDbContext db) : IQuoteService
         decimal? grossMarginPercent = quote.Price > 0
             ? decimal.Round(profit!.Value / quote.Price.Value * 100, 2, MidpointRounding.AwayFromZero)
             : null;
+        var foreignCost = ConvertFromCny(quote.Cost, quote.CnyPerUnit);
+        decimal? foreignPrice = quote.Price.HasValue ? ConvertFromCny(quote.Price.Value, quote.CnyPerUnit) : null;
+        decimal? foreignProfit = profit.HasValue ? ConvertFromCny(profit.Value, quote.CnyPerUnit) : null;
         return new QuoteDto(
             quote.Id,
             quote.CustomerName,
@@ -292,7 +319,23 @@ public sealed class QuoteService(ApplicationDbContext db) : IQuoteService
             quote.Price,
             profit,
             grossMarginPercent,
+            quote.CurrencyCode,
+            quote.CurrencyName,
+            quote.CnyPerUnit,
+            foreignCost,
+            foreignPrice,
+            foreignProfit,
             quote.CreatedByUserId,
             items);
+    }
+
+    private static decimal ConvertFromCny(decimal amount, decimal cnyPerUnit)
+    {
+        if (cnyPerUnit <= 0)
+        {
+            throw new InvalidOperationException("报价汇率必须大于零。");
+        }
+
+        return decimal.Round(amount / cnyPerUnit, 2, MidpointRounding.AwayFromZero);
     }
 }

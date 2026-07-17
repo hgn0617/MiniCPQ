@@ -13,7 +13,8 @@ namespace MiniCPQ.Web.Controllers;
 [Route("quotes")]
 public sealed class QuotePortalController(
     IQuoteService quoteService,
-    IServerService serverService) : Controller
+    IServerService serverService,
+    IExchangeRateService exchangeRateService) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken) =>
@@ -21,7 +22,8 @@ public sealed class QuotePortalController(
 
     [Authorize(Roles = AppRoles.Sales)]
     [HttpGet("create")]
-    public IActionResult Create() => View(new QuoteCreateViewModel());
+    public async Task<IActionResult> Create(CancellationToken cancellationToken) =>
+        View(await BuildCreateViewModelAsync(null, cancellationToken));
 
     [Authorize(Roles = AppRoles.Sales)]
     [HttpPost("create")]
@@ -30,19 +32,22 @@ public sealed class QuotePortalController(
     {
         if (!ModelState.IsValid)
         {
-            return View(model);
+            return View(await BuildCreateViewModelAsync(model, cancellationToken));
         }
 
         try
         {
-            var quote = await quoteService.CreateAsync(new CreateQuoteRequest(model.CustomerName), UserId, cancellationToken);
+            var quote = await quoteService.CreateAsync(
+                new CreateQuoteRequest(model.CustomerName, model.ExchangeRateId),
+                UserId,
+                cancellationToken);
             TempData["Success"] = "报价单已创建，请添加服务器。";
             return RedirectToAction(nameof(Details), new { id = quote.Id });
         }
         catch (AppException exception)
         {
             ModelState.AddModelError(string.Empty, exception.Message);
-            return View(model);
+            return View(await BuildCreateViewModelAsync(model, cancellationToken));
         }
     }
 
@@ -132,4 +137,14 @@ public sealed class QuotePortalController(
             TempData["Error"] = exception.Message;
         }
     }
+
+    private async Task<QuoteCreateViewModel> BuildCreateViewModelAsync(
+        QuoteCreateViewModel? posted,
+        CancellationToken cancellationToken) =>
+        new()
+        {
+            CustomerName = posted?.CustomerName ?? string.Empty,
+            ExchangeRateId = posted?.ExchangeRateId,
+            ExchangeRates = await exchangeRateService.GetAllAsync(cancellationToken)
+        };
 }

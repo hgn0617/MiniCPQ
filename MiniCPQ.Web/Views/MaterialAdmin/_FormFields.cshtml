@@ -8,8 +8,16 @@
 </div>
 <div class="mb-3">
     <label asp-for="Type" class="form-label"></label>
-    <input asp-for="Type" class="form-control" list="materialTypes" placeholder="CPU / RAM / ROM / GPU" />
-    <datalist id="materialTypes"><option value="CPU"></option><option value="RAM"></option><option value="ROM"></option><option value="GPU"></option><option value="NIC"></option></datalist>
+    <input asp-for="Type" class="form-control" list="materialTypes" placeholder="CPU / RAM / ROM / MOTHERBOARD / NIC" />
+    <datalist id="materialTypes">
+        <option value="CPU"></option>
+        <option value="RAM"></option>
+        <option value="ROM"></option>
+        <option value="MOTHERBOARD"></option>
+        <option value="NIC"></option>
+        <option value="GPU"></option>
+    </datalist>
+    <div class="form-text">主板使用 MOTHERBOARD，网卡使用 NIC，硬盘使用 ROM。</div>
     <span asp-validation-for="Type" class="text-danger"></span>
 </div>
 <div class="mb-4">

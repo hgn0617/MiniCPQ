@@ -1,0 +1,14 @@
+@model ExchangeRateFormViewModel
+@{
+    ViewData["Title"] = "新增汇率";
+}
+
+<div class="form-page">
+    <div class="page-heading"><div><span class="eyebrow">EXCHANGE RATE</span><h1>新增汇率</h1><p>新增后销售创建报价时即可选择该币种。</p></div></div>
+    <form asp-action="Create" method="post" class="content-card form-card">
+        <partial name="_FormFields" model="Model" />
+        <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">保存汇率</button><a class="btn btn-outline-secondary" asp-action="Index">取消</a></div>
+    </form>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -109,10 +109,29 @@ public sealed class ServerService(ApplicationDbContext db) : IServerService
         }
 
         var ids = inputs.Select(x => x.MaterialId).ToArray();
-        var existingCount = await db.Materials.CountAsync(x => ids.Contains(x.Id), cancellationToken);
-        if (existingCount != ids.Length)
+        var materials = await db.Materials.AsNoTracking()
+            .Where(x => ids.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+        if (materials.Count != ids.Length)
         {
             throw new ValidationException("服务器配置中包含不存在的材料。");
+        }
+
+        var inputById = inputs.ToDictionary(x => x.MaterialId);
+        var totalsByType = materials
+            .GroupBy(x => MaterialTypes.GetServerGroup(x.Type))
+            .ToDictionary(
+                group => group.Key,
+                group => group.Sum(material => inputById[material.Id].Quantity));
+
+        foreach (var (type, total) in totalsByType)
+        {
+            var limit = MaterialTypes.GetServerQuantityLimit(type);
+            if (limit.HasValue && total > limit.Value)
+            {
+                throw new ValidationException(
+                    $"每台服务器的所有{MaterialTypes.GetDisplayName(type)}型号合计最多为 {limit.Value}，当前合计为 {total}。");
+            }
         }
 
         return inputs;

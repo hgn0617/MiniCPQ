@@ -1,0 +1,23 @@
+@model ExchangeRateFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="mb-3">
+    <label asp-for="CurrencyCode" class="form-label"></label>
+    <input asp-for="CurrencyCode" class="form-control text-uppercase" maxlength="3" placeholder="例如：USD" />
+    <span asp-validation-for="CurrencyCode" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="CurrencyName" class="form-label"></label>
+    <input asp-for="CurrencyName" class="form-control" placeholder="例如：美元" />
+    <span asp-validation-for="CurrencyName" class="text-danger"></span>
+</div>
+<div class="mb-4">
+    <label asp-for="CnyPerUnit" class="form-label"></label>
+    <div class="input-group">
+        <span class="input-group-text">1 外币 =</span>
+        <input asp-for="CnyPerUnit" class="form-control" min="0.000001" step="0.000001" />
+        <span class="input-group-text">CNY</span>
+    </div>
+    <div class="form-text">例如 USD 填写 7.200000，表示 1 美元兑换 7.2 元人民币。</div>
+    <span asp-validation-for="CnyPerUnit" class="text-danger"></span>
+</div>

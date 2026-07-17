@@ -30,7 +30,7 @@ else
 {
     <div class="content-card table-responsive">
         <table class="table align-middle mb-0">
-            <thead><tr><th>客户</th><th>创建时间</th><th>状态</th><th>服务器</th><th class="text-end">报价金额</th><th></th></tr></thead>
+            <thead><tr><th>客户</th><th>创建时间</th><th>状态</th><th>币种</th><th>服务器</th><th class="text-end">报价金额</th><th></th></tr></thead>
             <tbody>
             @foreach (var quote in Model)
             {
@@ -38,8 +38,22 @@ else
                     <td class="fw-semibold">@quote.CustomerName</td>
                     <td>@quote.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                     <td><span class="status-badge @BadgeClass(quote.Status)">@quote.Status</span></td>
+                    <td><span class="type-pill">@quote.CurrencyCode</span></td>
                     <td>@quote.Items.Sum(x => x.Quantity) 台</td>
-                    <td class="text-end price-text">@(quote.Price.HasValue ? $"¥ {quote.Price.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待定价" : "—")</td>
+                    <td class="text-end price-text">
+                        @if (quote.Price.HasValue)
+                        {
+                            <div>¥ @quote.Price.Value.ToString("N2")</div>
+                            @if (quote.ForeignPrice.HasValue && quote.CurrencyCode != "CNY")
+                            {
+                                <small>@quote.CurrencyCode @quote.ForeignPrice.Value.ToString("N2")</small>
+                            }
+                        }
+                        else
+                        {
+                            <span>@(quote.Status == QuoteStatus.Submitted ? "待定价" : "—")</span>
+                        }
+                    </td>
                     <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@quote.Id">查看</a></td>
                 </tr>
             }

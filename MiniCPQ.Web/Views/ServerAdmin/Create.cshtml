@@ -3,7 +3,7 @@
     ViewData["Title"] = "新增服务器";
 }
 
-<div class="page-heading"><div><span class="eyebrow">SERVER</span><h1>新增服务器配置</h1><p>同一类型可以选择多个不同材料，每种材料可配置多个数量。</p></div></div>
+<div class="page-heading"><div><span class="eyebrow">SERVER</span><h1>新增服务器配置</h1><p>按硬件类型控制每台服务器的最大配置数量。</p></div></div>
 <form asp-action="Create" method="post" class="content-card form-card form-card-wide">
     <partial name="_FormFields" model="Model" />
     <div class="d-flex gap-2 mt-4"><button class="btn btn-primary" type="submit">保存配置</button><a class="btn btn-outline-secondary" asp-action="Index">取消</a></div>

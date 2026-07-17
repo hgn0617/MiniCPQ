@@ -18,11 +18,19 @@
         <a class="back-link" asp-action="Index">← 返回报价列表</a>
         <span class="status-badge @statusClass">@quote.Status</span>
         <h1>@quote.CustomerName</h1>
-        <p>创建于 @quote.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p>
+        <p>创建于 @quote.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm") · 报价币种 @quote.CurrencyCode（1 @quote.CurrencyCode = ¥ @quote.CnyPerUnit.ToString("N6")）</p>
     </div>
     <div class="quote-totals">
-        <div><small>成本</small><strong>@(quote.Status == QuoteStatus.Draft ? "待提交计算" : $"¥ {quote.Cost:N2}")</strong></div>
-        <div><small>最终售价</small><strong>@(quote.Price.HasValue ? $"¥ {quote.Price.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待管理员定价" : "—")</strong></div>
+        <div><small>本币成本 CNY</small><strong>@(quote.Status == QuoteStatus.Draft ? "待提交计算" : $"¥ {quote.Cost:N2}")</strong></div>
+        @if (quote.CurrencyCode != "CNY")
+        {
+            <div><small>外币成本 @quote.CurrencyCode</small><strong>@(quote.Status == QuoteStatus.Draft ? "待提交计算" : $"{quote.CurrencyCode} {quote.ForeignCost:N2}")</strong></div>
+        }
+        <div><small>本币售价 CNY</small><strong>@(quote.Price.HasValue ? $"¥ {quote.Price.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待管理员定价" : "—")</strong></div>
+        @if (quote.CurrencyCode != "CNY")
+        {
+            <div><small>外币售价 @quote.CurrencyCode</small><strong>@(quote.ForeignPrice.HasValue ? $"{quote.CurrencyCode} {quote.ForeignPrice.Value:N2}" : quote.Status == QuoteStatus.Submitted ? "待管理员定价" : "—")</strong></div>
+        }
         @if (quote.GrossMarginPercent.HasValue)
         {
             <div><small>毛利率</small><strong>@quote.GrossMarginPercent.Value.ToString("N2")%</strong></div>
@@ -132,10 +140,18 @@ else if (quote.Status == QuoteStatus.Submitted && User.IsInRole(AppRoles.Admin))
     <section class="content-card pricing-panel mt-4">
         <div class="pricing-heading">
             <div><span class="eyebrow">PRICING</span><h2>确定最终售价</h2><p>修改任意一项，另一项会立即重新计算。</p></div>
-            <div class="pricing-cost"><small>已冻结成本</small><strong>¥ @quote.Cost.ToString("N2")</strong></div>
+            <div class="pricing-cost">
+                <small>已冻结成本</small><strong>¥ @quote.Cost.ToString("N2")</strong>
+                @if (quote.CurrencyCode != "CNY")
+                {
+                    <small>@quote.CurrencyCode @quote.ForeignCost.ToString("N2")</small>
+                }
+            </div>
         </div>
         <form asp-action="Approve" asp-route-id="@quote.Id" method="post" id="approval-pricing-form"
-              data-cost="@quote.Cost.ToString(CultureInfo.InvariantCulture)">
+              data-cost="@quote.Cost.ToString(CultureInfo.InvariantCulture)"
+              data-cny-per-unit="@quote.CnyPerUnit.ToString(CultureInfo.InvariantCulture)"
+              data-currency-code="@quote.CurrencyCode">
             <div class="pricing-inputs">
                 <div>
                     <label for="gross-margin-percent" class="form-label">毛利率</label>
@@ -155,6 +171,10 @@ else if (quote.Status == QuoteStatus.Submitted && User.IsInRole(AppRoles.Admin))
             </div>
             <div class="pricing-summary">
                 <span>预计利润 <strong id="pricing-profit">—</strong></span>
+                @if (quote.CurrencyCode != "CNY")
+                {
+                    <span>外币售价 <strong id="pricing-foreign-price">—</strong></span>
+                }
                 <span id="pricing-message">售价不能低于成本</span>
             </div>
             <div class="pricing-submit">
@@ -176,7 +196,14 @@ else
         <div><strong>报价内容已冻结</strong><span>材料价格后续变化不会影响这张报价。</span></div>
         @if (quote.Profit.HasValue)
         {
-            <div class="text-end"><strong>利润 ¥ @quote.Profit.Value.ToString("N2")</strong><span>毛利率 @quote.GrossMarginPercent!.Value.ToString("N2")%</span></div>
+            <div class="text-end">
+                <strong>利润 ¥ @quote.Profit.Value.ToString("N2")</strong>
+                @if (quote.ForeignProfit.HasValue && quote.CurrencyCode != "CNY")
+                {
+                    <span>外币利润 @quote.CurrencyCode @quote.ForeignProfit.Value.ToString("N2")</span>
+                }
+                <span>毛利率 @quote.GrossMarginPercent!.Value.ToString("N2")%</span>
+            </div>
         }
     </div>
 }

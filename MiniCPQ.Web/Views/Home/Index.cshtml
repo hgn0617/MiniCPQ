@@ -8,7 +8,7 @@
         <div class="hero-copy">
             <span class="eyebrow">SERVER QUOTATION WORKSPACE</span>
             <h1>让服务器配置与报价<br />准确、清晰、可追溯</h1>
-            <p>管理员维护硬件和服务器配置，销售创建报价；提交时自动计算价格并冻结历史快照。</p>
+            <p>管理员维护硬件、服务器配置和汇率，销售创建多币种报价；提交时自动计算价格并冻结历史快照。</p>
             <div class="d-flex gap-3 flex-wrap">
                 <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Login">进入系统</a>
                 <a class="btn btn-outline-secondary btn-lg" href="/swagger">查看 Swagger</a>
@@ -45,7 +45,7 @@ else
             <a class="dashboard-card" asp-controller="MaterialAdmin" asp-action="Index">
                 <span class="card-index">02</span>
                 <h2>硬件材料</h2>
-                <p>维护 CPU、RAM、ROM 及其他材料的当前价格</p>
+                <p>维护 CPU、内存、硬盘、主板、网卡等材料价格</p>
                 <span class="card-link">管理材料 →</span>
             </a>
             <a class="dashboard-card" asp-controller="ServerAdmin" asp-action="Index">
@@ -53,6 +53,12 @@ else
                 <h2>服务器配置</h2>
                 <p>组合材料及数量，价格根据材料实时计算</p>
                 <span class="card-link">管理配置 →</span>
+            </a>
+            <a class="dashboard-card" asp-controller="ExchangeRateAdmin" asp-action="Index">
+                <span class="card-index">04</span>
+                <h2>汇率管理</h2>
+                <p>维护外币兑人民币汇率，供销售创建多币种报价</p>
+                <span class="card-link">管理汇率 →</span>
             </a>
         }
         <a class="dashboard-card dashboard-card-dark" href="/swagger">

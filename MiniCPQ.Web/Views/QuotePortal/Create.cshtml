@@ -4,13 +4,25 @@
 }
 
 <div class="form-page">
-    <div class="page-heading"><div><span class="eyebrow">NEW QUOTE</span><h1>新建报价单</h1><p>先填写客户名称，下一步再添加服务器和数量。</p></div></div>
+    <div class="page-heading"><div><span class="eyebrow">NEW QUOTE</span><h1>新建报价单</h1><p>填写客户并选择报价币种；汇率会在创建时保存为快照。</p></div></div>
     <form asp-action="Create" method="post" class="content-card form-card">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
         <div class="mb-4">
             <label asp-for="CustomerName" class="form-label"></label>
             <input asp-for="CustomerName" class="form-control form-control-lg" placeholder="例如：ABC 公司" autofocus />
             <span asp-validation-for="CustomerName" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label asp-for="ExchangeRateId" class="form-label"></label>
+            <select asp-for="ExchangeRateId" class="form-select form-select-lg">
+                <option value="">CNY · 人民币（本币）</option>
+                @foreach (var rate in Model.ExchangeRates)
+                {
+                    <option value="@rate.Id">@rate.CurrencyCode · @rate.CurrencyName（1 @rate.CurrencyCode = ¥ @rate.CnyPerUnit.ToString("N6")）</option>
+                }
+            </select>
+            <div class="form-text">报价创建后会固定当前汇率，管理员后续调整不会改变这张报价。</div>
+            <span asp-validation-for="ExchangeRateId" class="text-danger"></span>
         </div>
         <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">创建并继续</button><a class="btn btn-outline-secondary" asp-action="Index">取消</a></div>
     </form>

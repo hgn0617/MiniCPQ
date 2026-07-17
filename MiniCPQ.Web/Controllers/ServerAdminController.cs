@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MiniCPQ.Application.Common;
 using MiniCPQ.Application.DTOs;
 using MiniCPQ.Application.Interfaces;
+using MiniCPQ.Domain;
 using MiniCPQ.Web.Models;
 
 namespace MiniCPQ.Web.Controllers;
@@ -142,7 +143,13 @@ public sealed class ServerAdminController(
                     Type = material.Type,
                     UnitPrice = material.UnitPrice,
                     Selected = postedOption?.Selected ?? configured is not null,
-                    Quantity = postedOption?.Quantity ?? configured?.Quantity ?? 1
+                    Quantity = postedOption?.Quantity ?? configured?.Quantity ?? 1,
+                    MaxQuantity = MaterialTypes.GetServerQuantityLimit(material.Type),
+                    LimitDescription = MaterialTypes.GetServerQuantityLimit(material.Type) is int limit
+                        ? $"所有{MaterialTypes.GetDisplayName(material.Type)}型号合计最多 {limit} 个"
+                        : MaterialTypes.GetServerGroup(material.Type) == MaterialTypes.NetworkCard
+                            ? "网卡可选"
+                            : null
                 };
             }).ToList()
         };

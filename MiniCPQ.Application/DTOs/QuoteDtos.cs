@@ -4,7 +4,8 @@ using MiniCPQ.Domain;
 namespace MiniCPQ.Application.DTOs;
 
 public sealed record CreateQuoteRequest(
-    [Required, StringLength(200)] string CustomerName);
+    [Required, StringLength(200)] string CustomerName,
+    Guid? ExchangeRateId = null);
 
 public sealed record AddQuoteItemRequest(
     Guid ServerId,
@@ -43,5 +44,11 @@ public sealed record QuoteDto(
     decimal? Price,
     decimal? Profit,
     decimal? GrossMarginPercent,
+    string CurrencyCode,
+    string CurrencyName,
+    decimal CnyPerUnit,
+    decimal ForeignCost,
+    decimal? ForeignPrice,
+    decimal? ForeignProfit,
     string CreatedByUserId,
     IReadOnlyCollection<QuoteItemDto> Items);

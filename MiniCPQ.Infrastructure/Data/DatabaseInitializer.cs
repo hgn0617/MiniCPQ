@@ -51,31 +51,98 @@ public static class DatabaseInitializer
 
     private static async Task SeedCatalogAsync(ApplicationDbContext db, CancellationToken cancellationToken)
     {
-        if (await db.Materials.AnyAsync(cancellationToken))
+        var materials = await db.Materials.ToListAsync(cancellationToken);
+        var xeon = GetOrAddMaterial(materials, db, "Intel Xeon", MaterialTypes.Cpu, 2000m);
+        _ = GetOrAddMaterial(materials, db, "Intel Core", MaterialTypes.Cpu, 1200m);
+        var ram = GetOrAddMaterial(materials, db, "64GB RAM", MaterialTypes.Memory, 800m);
+        var ssd2Tb = GetOrAddMaterial(materials, db, "2TB SSD", MaterialTypes.Storage, 1000m);
+        var ssd1Tb = GetOrAddMaterial(materials, db, "1TB SSD", MaterialTypes.Storage, 600m);
+        var motherboard = GetOrAddMaterial(materials, db, "Dell R750 主板", MaterialTypes.Motherboard, 1500m);
+        var networkCard = GetOrAddMaterial(materials, db, "双口万兆网卡", MaterialTypes.NetworkCard, 600m);
+
+        var server = await db.Servers
+            .Include(x => x.Materials)
+            .ThenInclude(x => x.Material)
+            .SingleOrDefaultAsync(x => x.Name == "Dell R750", cancellationToken);
+        if (server is null)
         {
-            return;
+            db.Servers.Add(new Server
+            {
+                Name = "Dell R750",
+                Materials =
+                [
+                    new ServerMaterial { Material = xeon, Quantity = 1 },
+                    new ServerMaterial { Material = ram, Quantity = 2 },
+                    new ServerMaterial { Material = ssd2Tb, Quantity = 2 },
+                    new ServerMaterial { Material = ssd1Tb, Quantity = 1 },
+                    new ServerMaterial { Material = motherboard, Quantity = 1 },
+                    new ServerMaterial { Material = networkCard, Quantity = 1 }
+                ]
+            });
+        }
+        else
+        {
+            NormalizeDefaultServerCpu(db, server);
         }
 
-        var xeon = new Material { Name = "Intel Xeon", Type = "CPU", UnitPrice = 2000m };
-        var core = new Material { Name = "Intel Core", Type = "CPU", UnitPrice = 1200m };
-        var ram = new Material { Name = "64GB RAM", Type = "RAM", UnitPrice = 800m };
-        var ssd2Tb = new Material { Name = "2TB SSD", Type = "ROM", UnitPrice = 1000m };
-        var ssd1Tb = new Material { Name = "1TB SSD", Type = "ROM", UnitPrice = 600m };
-
-        db.Materials.AddRange(xeon, core, ram, ssd2Tb, ssd1Tb);
-        db.Servers.Add(new Server
+        if (!await db.ExchangeRates.AnyAsync(x => x.CurrencyCode == "USD", cancellationToken))
         {
-            Name = "Dell R750",
-            Materials =
-            [
-                new ServerMaterial { Material = xeon, Quantity = 1 },
-                new ServerMaterial { Material = core, Quantity = 1 },
-                new ServerMaterial { Material = ram, Quantity = 2 },
-                new ServerMaterial { Material = ssd2Tb, Quantity = 2 },
-                new ServerMaterial { Material = ssd1Tb, Quantity = 1 }
-            ]
-        });
+            db.ExchangeRates.Add(new ExchangeRate
+            {
+                CurrencyCode = "USD",
+                CurrencyName = "美元",
+                CnyPerUnit = 7.20m
+            });
+        }
+
+        if (!await db.ExchangeRates.AnyAsync(x => x.CurrencyCode == "EUR", cancellationToken))
+        {
+            db.ExchangeRates.Add(new ExchangeRate
+            {
+                CurrencyCode = "EUR",
+                CurrencyName = "欧元",
+                CnyPerUnit = 7.80m
+            });
+        }
+
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static Material GetOrAddMaterial(
+        ICollection<Material> materials,
+        ApplicationDbContext db,
+        string name,
+        string type,
+        decimal unitPrice)
+    {
+        var existing = materials.SingleOrDefault(x => x.Name == name);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var material = new Material { Name = name, Type = type, UnitPrice = unitPrice };
+        materials.Add(material);
+        db.Materials.Add(material);
+        return material;
+    }
+
+    private static void NormalizeDefaultServerCpu(ApplicationDbContext db, Server server)
+    {
+        var cpuComponents = server.Materials
+            .Where(x => MaterialTypes.GetServerGroup(x.Material.Type) == MaterialTypes.Cpu)
+            .OrderByDescending(x => x.Material.Name == "Intel Xeon")
+            .ThenBy(x => x.Material.Name)
+            .ToList();
+        if (cpuComponents.Count > 0)
+        {
+            cpuComponents[0].Quantity = 1;
+            foreach (var extraCpu in cpuComponents.Skip(1))
+            {
+                db.ServerMaterials.Remove(extraCpu);
+            }
+        }
+
     }
 
     private static async Task SeedUserAsync(
